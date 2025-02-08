@@ -2,14 +2,16 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    [Header("References")]
     public CharacterController Controller;
     public Transform cameraTransform;
-    float xRotation = 0f;
 
     [Header("Player Settings")]
     public float PlayerSpeed = 5.0f;
     public float mouseSensitivityX = 500f; //UpDown
     public float mouseSensitivityY = 1000f; //LeftRight
+
+    float xRotation = 0f;
     float currentYRotation = 0f;
 
     void Start()
@@ -46,21 +48,15 @@ public class PlayerController : MonoBehaviour
 }
 
     public void HandleCameraInputs() {
-        // Get mouse input for rotation
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivityX * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivityY * Time.deltaTime;
-
-        // Rotate the player (the empty GameObject) left/right (Y-axis)
-        // transform.Rotate(Vector3.up * mouseX);
         
-        currentYRotation += mouseX;  // Accumulate mouseX for continuous rotation
+        currentYRotation += mouseX;  
         Quaternion targetRotation = Quaternion.Euler(0f, currentYRotation, 0f);
         transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * 10f);  // Smooth horizontal rotation
 
-        // Rotate the camera (child of the empty GameObject) up/down (X-axis)
         xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -10f, 20f);  // Clamp to prevent flipping
-        // cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);  // Apply rotation to the camera
+        xRotation = Mathf.Clamp(xRotation, -10f, 20f);  
         cameraTransform.localRotation = Quaternion.Lerp(cameraTransform.localRotation, Quaternion.Euler(xRotation, 0f, 0f), Time.deltaTime * 5f); // Smooth vertical rotation
 
     }
