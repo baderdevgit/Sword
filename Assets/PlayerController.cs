@@ -8,11 +8,15 @@ public class PlayerController : MonoBehaviour
 
     [Header("Player Settings")]
     public float PlayerSpeed = 5.0f;
+    public float JumpHeight = 2f;
     public float mouseSensitivityX = 500f; //UpDown
     public float mouseSensitivityY = 1000f; //LeftRight
+    public float gravity = -30f;
+    public bool isGrounded;
 
     float xRotation = 0f;
     float currentYRotation = 0f;
+    private Vector3 velocity;  
 
     void Start()
     {
@@ -22,30 +26,38 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        MovePlayer();
-
         if(!Input.GetMouseButton(1)) {
             HandleCameraInputs();
         }
+        MovePlayer();
     }
 
     public void MovePlayer()
-{
-    // Get input for movement
-    Vector3 move = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-
-    // Normalize the movement vector to ensure consistent speed
-    if (move.magnitude > 1)  // If the vector length is greater than 1 (e.g., diagonal movement)
     {
-        move.Normalize();  // Normalize the vector to make the total speed consistent
+        //ensures y velocity doesn't get to large
+        isGrounded = Controller.isGrounded;
+        if (isGrounded && velocity.y < 0)
+        {
+            velocity.y = -2f;
+        }
+
+        Vector3 move = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+        if (move.magnitude > 1)  
+        {
+            move.Normalize();
+        }
+
+        move = transform.TransformDirection(move);
+        Controller.Move(move * Time.deltaTime * PlayerSpeed);
+
+        if (Input.GetKey(KeyCode.Space) && isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(JumpHeight * -2f * gravity);
+        }
+
+        velocity.y += gravity * Time.deltaTime;
+        Controller.Move(velocity * Time.deltaTime);
     }
-
-    // Make movement relative to the player's facing direction
-    move = transform.TransformDirection(move);
-
-    // Move the player using the CharacterController
-    Controller.Move(move * Time.deltaTime * PlayerSpeed);
-}
 
     public void HandleCameraInputs() {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivityX * Time.deltaTime;
@@ -60,5 +72,4 @@ public class PlayerController : MonoBehaviour
         cameraTransform.localRotation = Quaternion.Lerp(cameraTransform.localRotation, Quaternion.Euler(xRotation, 0f, 0f), Time.deltaTime * 5f); // Smooth vertical rotation
 
     }
-
 }
