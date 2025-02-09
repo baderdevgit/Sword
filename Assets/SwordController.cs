@@ -35,9 +35,12 @@ public class SwordController : MonoBehaviour
     {
         if (playerController.isCameraLocked)
         {
-            rotateSword();
+            //rotateSword();
+            GetMouseVelocity();
         }
     }
+
+  
 
     private void GetMouseVelocity()
     {
@@ -48,12 +51,16 @@ public class SwordController : MonoBehaviour
         Vector3 deltaPosition = currentMousePosition - lastMousePosition;
         mouseVelocity = deltaPosition / Time.deltaTime;
 
+        //Debug.Log(mouseVelocity);
+
 
         lastMousePosition = currentMousePosition;
     }
 
-    private void rotateSword()
+    private void rotateSword(float angle)
     {
-        transform.RotateAround(cog.transform.position, transform.forward, 10);
+        transform.RotateAround(cog.transform.position, transform.forward, angle * SwordRotationSpeed );
     }
+
+    
 }

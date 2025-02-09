@@ -21,7 +21,6 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        //rb.linearDamping = 5f;
         
         Cursor.lockState = CursorLockMode.Locked;
         isCameraLocked = false;
@@ -33,6 +32,9 @@ public class PlayerController : MonoBehaviour
 
         if (!isCameraLocked) {
             HandleCameraInputs();
+        } else
+        {
+            ResetCameraPosition();
         }
 
         HandlePlayerMovements();
@@ -53,18 +55,12 @@ public class PlayerController : MonoBehaviour
         }
         move = transform.TransformDirection(move);
 
-        //if (isGrounded)
-        //{
-            // Apply force with VelocityChange to instantly change velocity
-            rb.AddForce(move * PlayerSpeed, ForceMode.VelocityChange);
+        rb.AddForce(move * PlayerSpeed, ForceMode.VelocityChange);
 
-            Vector3 horizontalVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);  // Ignore Y (vertical) axis
-            horizontalVelocity = Vector3.ClampMagnitude(horizontalVelocity, PlayerSpeed);  // Clamp only the X and Z axes
+        Vector3 horizontalVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);  // Ignore Y (vertical) axis
+        horizontalVelocity = Vector3.ClampMagnitude(horizontalVelocity, PlayerSpeed);  // Clamp only the X and Z axes
 
-            // Combine clamped horizontal velocity with the original Y-axis velocity
-            rb.linearVelocity = new Vector3(horizontalVelocity.x, rb.linearVelocity.y, horizontalVelocity.z);
-
-        //}
+        rb.linearVelocity = new Vector3(horizontalVelocity.x, rb.linearVelocity.y, horizontalVelocity.z);
     }
 
     private void GetPreMoveInfo()
@@ -106,4 +102,11 @@ public class PlayerController : MonoBehaviour
             Debug.Log("Jumping");
         }
     }
+
+    private void ResetCameraPosition()
+    {
+        if(cameraTransform.localRotation != Quaternion.Euler(15f, 0f, 0f))
+            cameraTransform.localRotation = Quaternion.Lerp(cameraTransform.localRotation, Quaternion.Euler(15f, 0f, 0f), Time.deltaTime * 5f);
+    }
+
 }
