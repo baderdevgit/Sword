@@ -1,16 +1,16 @@
 using System;
 using TMPro;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class SwordController : MonoBehaviour
 {
 
-    public CharacterController swordController;
     public PlayerController playerController;
     public GameObject cog;
 
     public float SwordMovementSpeed = 0.1f;
-    public float SwordRotationSpeed = 1f;
+    public float SwordRotationSpeed = 10f;
     public float SwordSlashSpeed = 1f;
 
     public float moveDistance = 2f;
@@ -18,49 +18,102 @@ public class SwordController : MonoBehaviour
     //mouse stuff
     private Vector3 lastMousePosition;
     private Vector3 mouseVelocity;
-    private Vector3 targetPosition;
-    public float velocityThreshold = 0.1f;  // Threshold to detect significant movement
-    private Transform startingPosition;
+    public float velocityThreshold = 0.1f;  
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private Vector3 startingPosition;
+    private Vector3 currentPosition;
+    private Quaternion startingRotation;
+    private Quaternion currentRotation;
+    private Vector3 startingTransform;
+
+    private float currentAngle = 0f;
+    private float targetAngle = 90f;
+
+    bool isCutting = false;
+
+    float initial_angle = 25f;
+    float cutting_angle = 90f;
+    Quaternion targetRotation = Quaternion.Euler(90, 0, 0);
+
+
+    Quaternion originalRotation;
+    bool rotatingDown = true;
+    private Vector2 accumulatedMouseDelta;
+
     void Start()
     {
         lastMousePosition = Input.mousePosition;
-        startingPosition = transform;
-        targetPosition = transform.position;
+        originalRotation = transform.localRotation;
+
+
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (playerController.isCameraLocked)
         {
-            //rotateSword();
-            GetMouseVelocity();
+            rotateSword();
+        }
+        HandleSlash();   
+    }
+
+    private void HandleSlash()
+    {
+        transform.GetLocalPositionAndRotation(out currentPosition, out currentRotation);
+        if (Input.GetKey(KeyCode.Mouse0))
+        {
+            extendSword();
+        }
+        else
+        {
+            retractSword();
         }
     }
 
-  
-
-    private void GetMouseVelocity()
+    private void rotateSword()
     {
-        // Get current mouse position
-        Vector3 currentMousePosition = Input.mousePosition;
 
-        // Calculate the mouse's velocity (movement per second)
-        Vector3 deltaPosition = currentMousePosition - lastMousePosition;
-        mouseVelocity = deltaPosition / Time.deltaTime;
+        //transform.RotateAround(cog.transform.position, playerController.transform.forward, SwordRotationSpeed );
+        //transform.localRotation = Quaternion.RotateTowards(transform.localRotation, targetRotation, SwordSlashSpeed * Time.deltaTime);
 
-        //Debug.Log(mouseVelocity);
+        // Step 1: Get the mouse delta movement for X and Y axes
+        float mouseX = Input.GetAxis("Mouse X") * 20f * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * 20f * Time.deltaTime;
 
+        // Step 2: Accumulate the mouse delta in a 2D vector (like you're tracking cursor movement)
+        accumulatedMouseDelta += new Vector2(mouseX, mouseY);
 
-        lastMousePosition = currentMousePosition;
+        // Step 3: Calculate the angle from the center (Atan2 gives you the angle in radians)
+        currentAngle = Mathf.Atan2(accumulatedMouseDelta.y, accumulatedMouseDelta.x) * Mathf.Rad2Deg;
+
+        // Step 4: Ensure the angle is in the range of -360 to 360 degrees (normalize if needed)
+        if (currentAngle > 360f) currentAngle -= 360f;
+        if (currentAngle < -360f) currentAngle += 360f;
+
+        // Step 5: Rotate the sword based on the calculated angle (side to side)
+        Quaternion targetRotation = Quaternion.Euler(0f, 0f, 90f);
+
+        // Step 6: Smoothly rotate the sword towards the target angle
+        transform.localRotation = Quaternion.RotateTowards(transform.localRotation, targetRotation, SwordSlashSpeed * Time.deltaTime);
+
+        
     }
 
-    private void rotateSword(float angle)
+
+
+    public void extendSword()
     {
-        transform.RotateAround(cog.transform.position, transform.forward, angle * SwordRotationSpeed );
+        transform.localRotation = Quaternion.RotateTowards(transform.localRotation, targetRotation, SwordSlashSpeed * Time.deltaTime);
     }
 
-    
+    public void retractSword()
+    {
+        transform.localRotation = Quaternion.RotateTowards(transform.localRotation, originalRotation, SwordSlashSpeed * Time.deltaTime);
+    }
+
+
+
+
+
+
 }

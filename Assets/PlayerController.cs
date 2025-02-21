@@ -78,7 +78,7 @@ public class PlayerController : MonoBehaviour
         transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * 10f);  // Smooth horizontal rotation
 
         xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -10f, 20f);  
+        xRotation = Mathf.Clamp(xRotation, 0f, 20f);  
         cameraTransform.localRotation = Quaternion.Lerp(cameraTransform.localRotation, Quaternion.Euler(xRotation, 0f, 0f), Time.deltaTime * 5f); // Smooth vertical rotation
 
     }
@@ -99,7 +99,6 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKey(KeyCode.Space) && isGrounded)
         {
             rb.AddForce(Vector3.up * JumpHeight, ForceMode.Impulse);
-            Debug.Log("Jumping");
         }
     }
 
