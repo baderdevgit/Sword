@@ -763,7 +763,6 @@ MonoBehaviour:
   SprintSpeed: 1.5
   JumpHeight: 0.25
   isGrounded: 0
-  isCameraLocked: 0
 --- !u!114 &1386362646
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -776,9 +775,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c77ee89387edfcd47ba37b4288c81817, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraTransform: {fileID: 279789068}
+  playerCamera: {fileID: 279789067}
   mouseSensitivityX: 750
   mouseSensitivityY: 1000
+  followSpeed: 10
+  delayFactor: 0.1
+  SwordCOG: {fileID: 1985746377}
 --- !u!1 &1457962456
 GameObject:
   m_ObjectHideFlags: 0
@@ -897,7 +899,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1985746378}
   - component: {fileID: 1985746379}
-  - component: {fileID: 1985746380}
   m_Layer: 0
   m_Name: Sword_COG
   m_TagString: Untagged
@@ -948,21 +949,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 126
   m_CollisionDetection: 0
---- !u!114 &1985746380
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1985746377}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ef4aa3ef25473334a922e25fce99db4c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainCamera: {fileID: 279789067}
-  followSpeed: 10
-  delayFactor: 0.1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

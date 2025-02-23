@@ -45,7 +45,7 @@ public class PlayerAnimation : MonoBehaviour
         {
             animator.SetTrigger("Jump");
         }
-        else if ( (Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D)) || (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.D))) // Forward (W)
+        else if ( (Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D) && !Input.GetKeyDown(KeyCode.S)) || (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.D))) // Forward (W)
         {
             animator.SetTrigger("Jog");
         } 
@@ -57,7 +57,7 @@ public class PlayerAnimation : MonoBehaviour
         {
             animator.SetTrigger("JogFL");
         } 
-        else if (Input.GetKey(KeyCode.S)) // Backward (S)
+        else if (Input.GetKey(KeyCode.S) && !Input.GetKey(KeyCode.W) ) // Backward (S)
         {
             animator.SetTrigger("JogBackwards");
         }
