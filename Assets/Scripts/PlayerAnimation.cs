@@ -4,6 +4,7 @@ using UnityEngine;
 public class PlayerAnimation : MonoBehaviour
 {
     public Animator animator;
+    public PlayerController playerController;
 
     public void Jog()
     {
@@ -40,7 +41,7 @@ public class PlayerAnimation : MonoBehaviour
         ResetAllTriggers();
 
         // Handle WASD input
-        if (Input.GetKey(KeyCode.Space))
+        if (!playerController.isGrounded)
         {
             animator.SetTrigger("Jump");
         }
