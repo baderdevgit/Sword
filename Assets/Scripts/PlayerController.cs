@@ -11,15 +11,11 @@ public class PlayerController : MonoBehaviour
     public float SprintSpeed = 1.5f;
     public float JumpHeight = 1f;
     public bool isGrounded;
-    public bool isCameraLocked;
 
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        
-        Cursor.lockState = CursorLockMode.Locked;
-        isCameraLocked = false;
     }
 
     void Update()
@@ -66,7 +62,7 @@ public class PlayerController : MonoBehaviour
 
     private void GetPreMoveInfo()
     {
-        isCameraLocked = Input.GetMouseButton(1);
+        //isCameraLocked = Input.GetMouseButton(1);
         isGrounded = IsGrounded();
     }  
 

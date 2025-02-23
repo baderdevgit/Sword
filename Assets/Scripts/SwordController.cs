@@ -50,10 +50,10 @@ public class SwordController : MonoBehaviour
 
     void Update()
     {
-        if (playerController.isCameraLocked)
-        {
-            rotateSword();
-        }
+        //if (playerController.isCameraLocked)
+        //{
+        //    rotateSword();
+        //}
         HandleSlash();   
     }
 
