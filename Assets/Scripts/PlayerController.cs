@@ -8,7 +8,8 @@ public class PlayerController : MonoBehaviour
     public Rigidbody rb;
 
     [Header("Player Settings")]
-    public float PlayerSpeed = 5.0f;
+    public float PlayerSpeed = 0.75f;
+    public float SprintSpeed = 1.5f;
     public float JumpHeight = 0.5f;
     public float mouseSensitivityX = 500f; //UpDown
     public float mouseSensitivityY = 1000f; //LeftRight
@@ -30,12 +31,7 @@ public class PlayerController : MonoBehaviour
     {
         GetPreMoveInfo();
 
-        if (!isCameraLocked) {
-            HandleCameraInputs();
-        } else
-        {
-            ResetCameraPosition();
-        }
+        HandlePlayerRotation();
 
         HandlePlayerMovements();
     }
@@ -55,12 +51,29 @@ public class PlayerController : MonoBehaviour
         }
         move = transform.TransformDirection(move);
 
-        rb.AddForce(move * PlayerSpeed, ForceMode.VelocityChange);
+        float speed = Input.GetKey(KeyCode.LeftShift) ? SprintSpeed : PlayerSpeed;
 
+        rb.AddForce(move * speed, ForceMode.VelocityChange);
+
+        //prevent player from exceeding that speed in the case of holding down W and A
         Vector3 horizontalVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);  // Ignore Y (vertical) axis
-        horizontalVelocity = Vector3.ClampMagnitude(horizontalVelocity, PlayerSpeed);  // Clamp only the X and Z axes
-
+        horizontalVelocity = Vector3.ClampMagnitude(horizontalVelocity, speed);  // Clamp only the X and Z axes
         rb.linearVelocity = new Vector3(horizontalVelocity.x, rb.linearVelocity.y, horizontalVelocity.z);
+
+
+
+    }
+
+    private void HandlePlayerRotation()
+    {
+        if (!isCameraLocked)
+        {
+            HandleCameraInputs();
+        }
+        else
+        {
+            ResetCameraPosition();
+        }
     }
 
     private void GetPreMoveInfo()
