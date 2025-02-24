@@ -6,14 +6,14 @@ using UnityEngine.InputSystem;
 
 public class PlayerMouseInputController : MonoBehaviour
 {
+    public CursorIcon cursor;
+
     //PlayerRotation Variables
     public Camera playerCamera;
     public float mouseSensitivityX = 500f; //UpDown
     public float mouseSensitivityY = 1000f; //LeftRight
     float xRotation = 0f;
     float currentYRotation = 0f;
-    float mouseX;
-    float mouseY;
     Rect centerBox;
     float centerBoxSize = 800f;
 
@@ -22,7 +22,9 @@ public class PlayerMouseInputController : MonoBehaviour
     public float delayFactor = 0.1f;
     private Vector3 mouseWorldPosition;
     private Vector3 initialSwordPosition;
+    private Quaternion initialCameraRotation;
     public GameObject SwordCOG;
+    private GUIStyle boxStyle;
 
     void Start()
     {
@@ -35,17 +37,19 @@ public class PlayerMouseInputController : MonoBehaviour
             centerBoxHeight);
 
         initialSwordPosition = SwordCOG.transform.localPosition;
+        initialCameraRotation = playerCamera.transform.localRotation;
+    }
+
+    void OnGUI()
+    {
+        GUI.Box(centerBox, GUIContent.none);
     }
 
     void FixedUpdate()
     {
-        Vector3 mousePos = Input.mousePosition;
-        mouseX = mousePos.x;
-        mouseY = mousePos.y;
-
-        if (centerBox.Contains(mousePos))
+        if (centerBox.Contains(cursor.mousePos))
         {
-            // Inside the center box: move the sword
+            ResetCameraPosition();
             moveSwordXY();
         }
         else
@@ -57,14 +61,14 @@ public class PlayerMouseInputController : MonoBehaviour
 
     private void ResetCameraPosition()
     {
-        if (playerCamera.transform.localRotation != Quaternion.Euler(15f, 0f, 0f))
-            playerCamera.transform.localRotation = Quaternion.Lerp(playerCamera.transform.localRotation, Quaternion.Euler(15f, 0f, 0f), Time.deltaTime * 5f);
+        if (playerCamera.transform.localRotation != initialCameraRotation)
+            playerCamera.transform.localRotation = Quaternion.Lerp(playerCamera.transform.localRotation, initialCameraRotation, Time.deltaTime * 5f);
     }
 
     void RotatePlayerWithMouse()
     {
         float screenCenterX = Screen.width / 2;
-        float distanceFromCenter = mouseX - screenCenterX;
+        float distanceFromCenter = cursor.mousePos.x - screenCenterX;
      
         // Adjust speed by how far the mouse is from the center
         float rotationSpeedMultiplier = (Mathf.Abs(distanceFromCenter)) / screenCenterX;
@@ -77,48 +81,27 @@ public class PlayerMouseInputController : MonoBehaviour
         Quaternion targetRotation = Quaternion.Euler(0f, currentYRotation, 0f);
         transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * 10f);  // Smooth horizontal rotation
 
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, 5f, 15);
-        playerCamera.transform.localRotation = Quaternion.Lerp(playerCamera.transform.localRotation, Quaternion.Euler(xRotation, 0f, 0f), Time.deltaTime * 5f); // Smooth vertical rotation
+        //xRotation -= mouseY;
+        //xRotation = Mathf.Clamp(xRotation, 0f, 15);
+        //playerCamera.transform.localRotation = Quaternion.Lerp(playerCamera.transform.localRotation, Quaternion.Euler(xRotation, 0f, 0f), Time.deltaTime * 5f); // Smooth vertical rotation
 
     }
 
     void moveSwordXY()
     {
-        // Get the mouse position in screen space
-        Vector3 mousePosition = Input.mousePosition;
-
         // Convert the screen position to world position at a fixed distance from the camera
-        mousePosition.z = Mathf.Abs(playerCamera.transform.position.z - transform.position.z); // Maintain sword distance
-        mouseWorldPosition = playerCamera.ScreenToWorldPoint(mousePosition);
+        cursor.mousePos.z = Mathf.Abs(playerCamera.transform.position.z - transform.position.z); // Maintain sword distance
+        mouseWorldPosition = playerCamera.ScreenToWorldPoint(cursor.mousePos);
 
         // Convert world position to local position relative to the player
         Vector3 localMousePosition = SwordCOG.transform.parent.InverseTransformPoint(mouseWorldPosition);
 
         // Only affect XY, keeping Z unchanged
-        var border = 0.75;
-        Vector3 targetLocalPosition = new Vector3((float)Math.Clamp(localMousePosition.x, initialSwordPosition.x - border, initialSwordPosition.x + border), (float)Math.Clamp(localMousePosition.y, initialSwordPosition.y - 0.1, initialSwordPosition.y + border), SwordCOG.transform.localPosition.z);
+        Vector3 targetLocalPosition = new Vector3(localMousePosition.x, localMousePosition.y, SwordCOG.transform.localPosition.z);
 
         // Sword drifts towards the mouse position in the player's local space
-        SwordCOG.transform.localPosition = Vector3.Lerp(SwordCOG.transform.localPosition, targetLocalPosition, followSpeed * Time.deltaTime);
-    }
-
-
-
-
-    void OnGUI()
-    {
-        // Save the current GUI color
-        Color originalColor = GUI.color;
-
-        // Set the GUI color to the defined box color
-        GUI.color = Color.blue;
-
-        // Draw the center box using a GUI Box
-        GUI.Box(centerBox, GUIContent.none);
-
-        // Restore the original GUI color
-        GUI.color = originalColor;
+        //SwordCOG.transform.localPosition = Vector3.Lerp(SwordCOG.transform.localPosition, targetLocalPosition, followSpeed * Time.deltaTime);
+        SwordCOG.transform.localPosition = targetLocalPosition;
     }
 
     struct Point
