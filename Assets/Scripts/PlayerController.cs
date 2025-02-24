@@ -8,7 +8,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Player Settings")]
     public float PlayerSpeed = 1f;
-    public float SprintSpeed = 1.5f;
+    public float SprintSpeed = 5f;
     public float JumpHeight = 1f;
     public bool isGrounded;
 

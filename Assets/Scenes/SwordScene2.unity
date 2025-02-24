@@ -857,7 +857,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cursor: {fileID: 2006058806}
   playerCamera: {fileID: 279789067}
-  mouseSensitivityX: 750
+  mouseSensitivityX: 1000
   mouseSensitivityY: 1000
   followSpeed: 10
   delayFactor: 0.1

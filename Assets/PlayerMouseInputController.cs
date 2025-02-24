@@ -47,7 +47,7 @@ public class PlayerMouseInputController : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (centerBox.Contains(cursor.mousePos))
+        if (centerBox.Contains(cursor.mousePos) && !Input.GetMouseButton(1))
         {
             ResetCameraPosition();
             moveSwordXY();
@@ -55,7 +55,7 @@ public class PlayerMouseInputController : MonoBehaviour
         else
         {
             // Outside the center box: rotate the player
-            RotatePlayerWithMouse();
+            //RotatePlayerWithMouse();
         }
     }
 
@@ -89,19 +89,31 @@ public class PlayerMouseInputController : MonoBehaviour
 
     void moveSwordXY()
     {
-        // Convert the screen position to world position at a fixed distance from the camera
-        cursor.mousePos.z = Mathf.Abs(playerCamera.transform.position.z - transform.position.z); // Maintain sword distance
-        mouseWorldPosition = playerCamera.ScreenToWorldPoint(cursor.mousePos);
+        (float angle, float distance) = GetMouseAngleFromCenter();
+        Debug.Log($"angle: {angle}, distance: {distance}");
+        int xdir = Math.Abs(angle)>90 ? -1 : 1;
+        int ydir = angle > 0 ? 1 : -1;
+        SwordCOG.transform.localPosition = new Vector3(xdir*(distance/500f), ydir*(distance / 500f), SwordCOG.transform.localPosition.z);
 
-        // Convert world position to local position relative to the player
-        Vector3 localMousePosition = SwordCOG.transform.parent.InverseTransformPoint(mouseWorldPosition);
+        //mouseWorldPosition = playerCamera.ScreenToWorldPoint(cursor.mousePos);
+        //Vector3 targetLocalPosition = new Vector3(mouseWorldPosition.x, mouseWorldPosition.y, SwordCOG.transform.localPosition.z);
+        //SwordCOG.transform.localPosition = targetLocalPosition;
+    }
 
-        // Only affect XY, keeping Z unchanged
-        Vector3 targetLocalPosition = new Vector3(localMousePosition.x, localMousePosition.y, SwordCOG.transform.localPosition.z);
+    (float angle, float distance) GetMouseAngleFromCenter()
+    {
+        // Get the center of the screen
+        Vector2 screenCenter = new Vector2(Screen.width / 2f, (Screen.height / 2f) - 150);
 
-        // Sword drifts towards the mouse position in the player's local space
-        //SwordCOG.transform.localPosition = Vector3.Lerp(SwordCOG.transform.localPosition, targetLocalPosition, followSpeed * Time.deltaTime);
-        SwordCOG.transform.localPosition = targetLocalPosition;
+        // Calculate the direction from the center of the screen to the mouse position
+        Vector2 direction = cursor.mousePos - (Vector3)screenCenter;
+
+        // Calculate the distance
+        float distance = direction.magnitude;
+
+        // Calculate the angle (in degrees) using Atan2
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        return (angle, distance);
     }
 
     struct Point
