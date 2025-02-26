@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using DG.Tweening;
 
 public class PlayerMouseInputController : MonoBehaviour
 {
@@ -40,22 +41,26 @@ public class PlayerMouseInputController : MonoBehaviour
         initialCameraRotation = playerCamera.transform.localRotation;
     }
 
-    void OnGUI()
-    {
-        GUI.Box(centerBox, GUIContent.none);
-    }
+    bool inCircle = true;
 
     void FixedUpdate()
     {
-        if (centerBox.Contains(cursor.mousePos) && !Input.GetMouseButton(1))
+        float distanceToCenter = Vector2.Distance(centerBox.center, cursor.mousePos);
+        if (distanceToCenter <= 550 && !Input.GetMouseButton(1))
         {
+            inCircle = true;
             ResetCameraPosition();
             moveSwordXY();
         }
         else
         {
+            if (inCircle && !Input.GetMouseButton(1))
+            {
+                inCircle = false;
+                moveSwordXY(false);
+            }
             // Outside the center box: rotate the player
-            //RotatePlayerWithMouse();
+            RotatePlayerWithMouse();
         }
     }
 
@@ -87,33 +92,22 @@ public class PlayerMouseInputController : MonoBehaviour
 
     }
 
-    void moveSwordXY()
+    void moveSwordXY(bool inCircle = true)
     {
-        (float angle, float distance) = GetMouseAngleFromCenter();
-        Debug.Log($"angle: {angle}, distance: {distance}");
-        int xdir = Math.Abs(angle)>90 ? -1 : 1;
-        int ydir = angle > 0 ? 1 : -1;
-        SwordCOG.transform.localPosition = new Vector3(xdir*(distance/500f), ydir*(distance / 500f), SwordCOG.transform.localPosition.z);
+        var x = (cursor.mousePos.x - Screen.width/2f) / 600;
+        var y = (cursor.mousePos.y - Screen.height / 2f + 150) / 600;
+        Debug.Log($"X {x} Y {y}");
 
-        //mouseWorldPosition = playerCamera.ScreenToWorldPoint(cursor.mousePos);
-        //Vector3 targetLocalPosition = new Vector3(mouseWorldPosition.x, mouseWorldPosition.y, SwordCOG.transform.localPosition.z);
-        //SwordCOG.transform.localPosition = targetLocalPosition;
-    }
-
-    (float angle, float distance) GetMouseAngleFromCenter()
-    {
-        // Get the center of the screen
-        Vector2 screenCenter = new Vector2(Screen.width / 2f, (Screen.height / 2f) - 150);
-
-        // Calculate the direction from the center of the screen to the mouse position
-        Vector2 direction = cursor.mousePos - (Vector3)screenCenter;
-
-        // Calculate the distance
-        float distance = direction.magnitude;
-
-        // Calculate the angle (in degrees) using Atan2
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        return (angle, distance);
+        var targetPos = new Vector3(x, y, SwordCOG.transform.localPosition.z);
+        if (!inCircle )
+        {
+            SwordCOG.transform.DOLocalMove(targetPos, 0.1f);
+        }
+        else
+        {
+            SwordCOG.transform.localPosition = Vector3.Lerp(SwordCOG.transform.localPosition, targetPos, 5f * Time.deltaTime);
+        }
+        
     }
 
     struct Point
