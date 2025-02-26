@@ -4,12 +4,20 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using DG.Tweening;
+using System.Collections.Generic;
 
 public class PlayerMouseInputController : MonoBehaviour
 {
+    [Header("Referenced Objects")]
+    public GameObject SwordCOG;
     public CursorIcon cursor;
+    public GameObject SwordRotationXY;
 
-    //PlayerRotation Variables
+    [Header("Temp")]
+    public GameObject canvas;
+    public GameObject dotPrefab;
+
+    [Header("Player Rotation Variables")]
     public Camera playerCamera;
     public float mouseSensitivityX = 500f; //UpDown
     public float mouseSensitivityY = 1000f; //LeftRight
@@ -18,14 +26,17 @@ public class PlayerMouseInputController : MonoBehaviour
     Rect centerBox;
     float centerBoxSize = 800f;
 
-    //Sword Variables
+    [Header("Sword Variables")]
     public float followSpeed = 2f; 
     public float delayFactor = 0.1f;
     private Vector3 mouseWorldPosition;
     private Vector3 initialSwordPosition;
     private Quaternion initialCameraRotation;
-    public GameObject SwordCOG;
     private GUIStyle boxStyle;
+    Line cursorLine;
+
+    bool inCircle = true;
+    long frameCounter = 0;
 
     void Start()
     {
@@ -39,18 +50,34 @@ public class PlayerMouseInputController : MonoBehaviour
 
         initialSwordPosition = SwordCOG.transform.localPosition;
         initialCameraRotation = playerCamera.transform.localRotation;
+
+        cursorLine = new Line(true);
     }
 
-    bool inCircle = true;
 
     void FixedUpdate()
     {
+        frameCounter++;
+
+        cursorLine.AppendPoint(new Point(cursor.mousePos.x, cursor.mousePos.y));
+
         float distanceToCenter = Vector2.Distance(centerBox.center, cursor.mousePos);
         if (distanceToCenter <= 550 && !Input.GetMouseButton(1))
         {
             inCircle = true;
             ResetCameraPosition();
+
             moveSwordXY();
+
+            if(frameCounter % 10 == 0)
+            {
+                //CreateDot(new Vector2(cursorLine.p3.Value.x, cursorLine.p3.Value.y));
+                var angle = cursorLine.GetAngle();
+                Debug.Log(angle);
+            }
+
+            if (frameCounter >= long.MaxValue)
+                frameCounter = 0;
         }
         else
         {
@@ -62,6 +89,30 @@ public class PlayerMouseInputController : MonoBehaviour
             // Outside the center box: rotate the player
             RotatePlayerWithMouse();
         }
+    }
+
+    public void CreateDot(Vector2 screenPosition)
+    {
+        Debug.Log(screenPosition);
+
+        // Instantiate the dot prefab
+        GameObject newDot = Instantiate(dotPrefab, canvas.transform);
+
+        // Set the dot's position (screen space)
+        RectTransform rectTransform = newDot.GetComponent<RectTransform>();
+        rectTransform.anchoredPosition = new Vector3(screenPosition.x, screenPosition.y, 0); // This assumes your Canvas is set to Screen Space - Overlay
+    }
+
+    private void rotateSwordXY(float angle)
+    {
+        if (float.IsNaN(angle))
+        {
+            Debug.Log("NAN");
+            return;
+        }
+
+        Quaternion targetRotation = Quaternion.Euler(0f, 0f, 180f);
+        SwordRotationXY.transform.localRotation = Quaternion.RotateTowards(SwordRotationXY.transform.localRotation, targetRotation, 10 * angle * Time.deltaTime);
     }
 
     private void ResetCameraPosition()
@@ -96,7 +147,6 @@ public class PlayerMouseInputController : MonoBehaviour
     {
         var x = (cursor.mousePos.x - Screen.width/2f) / 600;
         var y = (cursor.mousePos.y - Screen.height / 2f + 150) / 600;
-        Debug.Log($"X {x} Y {y}");
 
         var targetPos = new Vector3(x, y, SwordCOG.transform.localPosition.z);
         if (!inCircle )
@@ -124,59 +174,82 @@ public class PlayerMouseInputController : MonoBehaviour
 
     struct Line
     {
-        //a point begins at p1 and ends at p3
-        //p1 ----------> p3
-        public Point? p1;
-        public Point? p2;
-        public Point? p3;
+        Queue<Point?> que;
+
+        public Line(bool b = true)
+        {
+            que = new Queue<Point?>();
+        }
 
         public void AppendPoint(Point? p)
         {
-            if (p1 == null)
-                p1 = p;
-            else if(p2 == null)
-                p2 = p;
-            else if(p3 == null)
-                p3 = p;
+            if (que.Count >= 3)
+            {
+                que.Dequeue();
+            }
             else
             {
-                p1 = p2;
-                p2 = p3;
-                p3 = p;
+                que.Enqueue(p);
             }
         }
 
         public float GetAngle()
         {
-            if (p1 == null || p2 == null || p3 == null)
+            Point? p1;
+            Point? p2;
+            Point? p3;
+            try
             {
-                //throw new InvalidOperationException("Not enough points to calculate the angle.");
-                return -1;
+                var arr = que.ToArray();
+                p1 = arr[0];
+                p2 = arr[1];
+                p3 = arr[2];
+
+                // Vector A (from p2 to p1)
+                float Ax = p1.Value.x - p2.Value.x;
+                float Ay = p1.Value.y - p2.Value.y;
+
+                // Vector B (from p2 to p3)
+                float Bx = p3.Value.x - p2.Value.x;
+                float By = p3.Value.y - p2.Value.y;
+
+                // Dot product of vectors A and B
+                float dotProduct = (Ax * Bx) + (Ay * By);
+
+                // Magnitude of vector A and vector B
+                float magnitudeA = (float)Math.Sqrt(Ax * Ax + Ay * Ay);
+                float magnitudeB = (float)Math.Sqrt(Bx * Bx + By * By);
+
+                // Calculate the cosine of the angle
+                float cosTheta = dotProduct / (magnitudeA * magnitudeB);
+
+                // Convert the cosine to an angle in degrees
+                float angleInRadians = (float)Math.Acos(cosTheta);
+                float angleInDegrees = angleInRadians * (180f / (float)Math.PI);
+
+                // Calculate the cross product of A and B (Z-component in 2D)
+                float crossProductZ = (Ax * By) - (Ay * Bx);
+
+                // If crossProductZ > 0, it's counterclockwise, else it's clockwise
+                if (crossProductZ < 0)
+                {
+                    // Clockwise, make the angle negative
+                    angleInDegrees = -angleInDegrees;
+                }
+
+                return angleInDegrees;
             }
-
-            // Vector A (from p2 to p1)
-            float Ax = p1.Value.x - p2.Value.x;
-            float Ay = p1.Value.y - p2.Value.y;
-
-            // Vector B (from p2 to p3)
-            float Bx = p3.Value.x - p2.Value.x;
-            float By = p3.Value.y - p2.Value.y;
-
-            // Dot product of vectors A and B
-            float dotProduct = (Ax * Bx) + (Ay * By);
-
-            // Magnitude of vector A and vector B
-            float magnitudeA = (float)Math.Sqrt(Ax * Ax + Ay * Ay);
-            float magnitudeB = (float)Math.Sqrt(Bx * Bx + By * By);
-
-            // Calculate the cosine of the angle
-            float cosTheta = dotProduct / (magnitudeA * magnitudeB);
-
-            // Convert the cosine to an angle in degrees
-            float angleInRadians = (float)Math.Acos(cosTheta);
-            float angleInDegrees = angleInRadians * (180f / (float)Math.PI);
-
-            return angleInDegrees;
+            catch (Exception e)
+            {
+                //line not full;
+            }
+            return -1;
         }
+
+
+        //public override string ToString()
+        //{
+        //    return $"p1: x:{p1.Value.x} y:{p1.Value.y} - p2: x:{p2.Value.x} y:{p2.Value.x} - p3: x:{p3.Value.x} y:{p3.Value.x}";
+        //}
     }
 }
