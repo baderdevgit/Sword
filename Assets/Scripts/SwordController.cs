@@ -44,8 +44,6 @@ public class SwordController : MonoBehaviour
     {
         lastMousePosition = Input.mousePosition;
         originalRotation = transform.localRotation;
-
-
     }
 
     void Update()

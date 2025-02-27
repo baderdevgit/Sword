@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using DG.Tweening;
 using System.Collections.Generic;
+using UnityEngine.UIElements;
 
 public class PlayerMouseInputController : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public class PlayerMouseInputController : MonoBehaviour
     public GameObject SwordCOG;
     public CursorIcon cursor;
     public GameObject SwordRotationXY;
+    public GameObject SwordExtension;
 
     [Header("Temp")]
     public GameObject canvas;
@@ -54,54 +56,61 @@ public class PlayerMouseInputController : MonoBehaviour
         cursorLine = new Line(true);
     }
 
-
+    int radius = 550;
     void FixedUpdate()
     {
         frameCounter++;
-
         cursorLine.AppendPoint(new Vector2(cursor.mousePos.x, cursor.mousePos.y));
-
         float distanceToCenter = Vector2.Distance(centerBox.center, cursor.mousePos);
-        if (distanceToCenter <= 550 && !Input.GetMouseButton(1))
+
+        //sword and camera movement
+        if (distanceToCenter <= radius && !Input.GetMouseButton(1)) //if inside the circle move da sword
         {
-            inCircle = true;
-            ResetCameraPosition();
-
-            moveSwordXY();
-            RotateSwordXY(GetMouseAngleFromCenter());
-
-
-
             if (frameCounter % 5 == 0)
             {
                 Vector2? latestPoint = cursorLine.GetLatestPoint();
-                //CreateDot(latestPoint.Value);
-                //Debug.Log(cursorLine.GetCurvedLineDirection());
-
             }
+
+            inCircle = true;
+            ResetCameraPosition();
+            moveSword();
 
             if (frameCounter >= long.MaxValue)
                 frameCounter = 0;
         }
+        else //mouse is outside the circle
+        {
+            if(!Input.GetMouseButton(1))
+            {
+                if (inCircle) //Moves the sword to edge of circle if it goes out of bounds
+                {
+                    inCircle = false;
+                    moveSwordXY(false);
+                }
+                RotatePlayerWithMouse();
+            }
+            else
+            {
+                //TODO new player rotation
+            }
+        }
+
+        //sword extension
+        if (Input.GetMouseButton(0))
+        {
+            extendSword();
+        }
         else
         {
-            if (inCircle && !Input.GetMouseButton(1))
-            {
-                inCircle = false;
-                moveSwordXY(false);
-            }
-            RotatePlayerWithMouse();
+            retractSword();
         }
     }
 
-    public void CreateDot(Vector2 screenPosition)
+    private void moveSword()
     {
-        // Instantiate the dot prefab
-        GameObject newDot = Instantiate(dotPrefab, canvas.transform);
-
-        // Set the dot's position (screen space)
-        RectTransform rectTransform = newDot.GetComponent<RectTransform>();
-        rectTransform.anchoredPosition = new Vector3(screenPosition.x, screenPosition.y, 0); // This assumes your Canvas is set to Screen Space - Overlay
+        Debug.Log(cursorLine.GetCurvedLineDirection());
+        moveSwordXY();
+        RotateSwordXY(GetMouseAngleFromCenter());
     }
 
     private void RotateSwordXY(float angle = 0)
@@ -109,6 +118,34 @@ public class PlayerMouseInputController : MonoBehaviour
         Debug.Log(angle);
         Quaternion targetRotation = Quaternion.Euler(0f, 0f, -1*angle);
         SwordRotationXY.transform.localRotation = Quaternion.RotateTowards(SwordRotationXY.transform.localRotation, targetRotation, 1000 * Time.deltaTime);
+    }
+
+    void moveSwordXY(bool inCircle = true)
+    {
+        var x = (cursor.mousePos.x - Screen.width / 2f) / 600;
+        var y = (cursor.mousePos.y - Screen.height / 2f + 150) / 600;
+
+        var targetPos = new Vector3(x, y, SwordCOG.transform.localPosition.z);
+        if (!inCircle)
+        {
+            SwordCOG.transform.DOLocalMove(targetPos, 0.1f);
+        }
+        else
+        {
+            SwordCOG.transform.localPosition = Vector3.Lerp(SwordCOG.transform.localPosition, targetPos, 5f * Time.deltaTime);
+        }
+    }
+
+    public void extendSword()
+    {
+        Quaternion targetRotation = Quaternion.Euler(-120f, 0f, 0);
+        SwordExtension.transform.localRotation = Quaternion.RotateTowards(SwordExtension.transform.localRotation, targetRotation, 1000 * Time.deltaTime);
+    }
+
+    public void retractSword()
+    {
+        Quaternion targetRotation = Quaternion.Euler(0f, 0f, 0);
+        SwordExtension.transform.localRotation = Quaternion.RotateTowards(SwordExtension.transform.localRotation, targetRotation, 1000 * Time.deltaTime);
     }
 
     private void ResetCameraPosition()
@@ -138,50 +175,6 @@ public class PlayerMouseInputController : MonoBehaviour
         //playerCamera.transform.localRotation = Quaternion.Lerp(playerCamera.transform.localRotation, Quaternion.Euler(xRotation, 0f, 0f), Time.deltaTime * 5f); // Smooth vertical rotation
 
     }
-
-    void moveSwordXY(bool inCircle = true)
-    {
-        var x = (cursor.mousePos.x - Screen.width / 2f) / 600;
-        var y = (cursor.mousePos.y - Screen.height / 2f + 150) / 600;
-
-        var targetPos = new Vector3(x, y, SwordCOG.transform.localPosition.z);
-        if (!inCircle)
-        {
-            SwordCOG.transform.DOLocalMove(targetPos, 0.1f);
-        }
-        else
-        {
-            SwordCOG.transform.localPosition = Vector3.Lerp(SwordCOG.transform.localPosition, targetPos, 5f * Time.deltaTime);
-        }
-    }
-
-    public float GetMouseAngleFromCenter()
-    {
-        // Get the screen center
-        Vector2 screenCenter = new Vector2((Screen.width / 2f), (Screen.height / 2f)-150);
-
-        // Get the mouse position
-        Vector2 mousePos = Input.mousePosition;
-
-        // Calculate the vector from the center of the screen to the mouse position
-        Vector2 direction = mousePos - screenCenter;
-
-        // Get the angle in radians (Mathf.Atan2 returns the angle in radians)
-        float angleRadians = Mathf.Atan2(direction.y, direction.x);
-
-        // Convert the angle to degrees
-        float angleDegrees = angleRadians * Mathf.Rad2Deg;
-
-        // Adjust the angle so that 0° is "up" (north)
-        // Atan2 returns 0° at right (east), so we subtract 90° to make 0° point up
-        angleDegrees -= 90f;
-
-        // Return the angle, which is now correctly oriented:
-        // 0° is up, 90° is right, -90° is left
-        //Debug.Log(angleDegrees);
-        return angleDegrees;
-    }
-
 
     struct Line
     {
@@ -232,5 +225,42 @@ public class PlayerMouseInputController : MonoBehaviour
             // Return positive for clockwise, negative for counterclockwise
             return cross;
         }
+    }
+
+    public float GetMouseAngleFromCenter()
+    {
+        // Get the screen center
+        Vector2 screenCenter = new Vector2((Screen.width / 2f), (Screen.height / 2f) - 150);
+
+        // Get the mouse position
+        Vector2 mousePos = Input.mousePosition;
+
+        // Calculate the vector from the center of the screen to the mouse position
+        Vector2 direction = mousePos - screenCenter;
+
+        // Get the angle in radians (Mathf.Atan2 returns the angle in radians)
+        float angleRadians = Mathf.Atan2(direction.y, direction.x);
+
+        // Convert the angle to degrees
+        float angleDegrees = angleRadians * Mathf.Rad2Deg;
+
+        // Adjust the angle so that 0° is "up" (north)
+        // Atan2 returns 0° at right (east), so we subtract 90° to make 0° point up
+        angleDegrees -= 90f;
+
+        // Return the angle, which is now correctly oriented:
+        // 0° is up, 90° is right, -90° is left
+        //Debug.Log(angleDegrees);
+        return angleDegrees;
+    }
+
+    public void CreateDot(Vector2 screenPosition)
+    {
+        // Instantiate the dot prefab
+        GameObject newDot = Instantiate(dotPrefab, canvas.transform);
+
+        // Set the dot's position (screen space)
+        RectTransform rectTransform = newDot.GetComponent<RectTransform>();
+        rectTransform.anchoredPosition = new Vector3(screenPosition.x, screenPosition.y, 0); // This assumes your Canvas is set to Screen Space - Overlay
     }
 }

@@ -12,7 +12,6 @@ public class PlayerController : MonoBehaviour
     public float JumpHeight = 1f;
     public bool isGrounded;
 
-
     void Start()
     {
         rb = GetComponent<Rigidbody>();
