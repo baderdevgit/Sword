@@ -926,7 +926,7 @@ MonoBehaviour:
   canvas: {fileID: 1443783965}
   dotPrefab: {fileID: 3422400200664094818, guid: ac9b4bec0907a9a49a963ad75684b96a, type: 3}
   playerCamera: {fileID: 279789067}
-  mouseSensitivityX: 1250
+  mouseSensitivityX: 750
   mouseSensitivityY: 1000
   followSpeed: 10
   delayFactor: 0.1
